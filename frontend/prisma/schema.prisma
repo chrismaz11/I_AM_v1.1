@@ -1,0 +1,221 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum CredentialStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+  EXPIRED
+  REVOKED
+}
+
+enum VerificationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum FileCategory {
+  DOCUMENT
+  IMAGE
+  OTHER
+}
+
+enum AuditAction {
+  USER_LOGIN
+  USER_REGISTER
+  CREATE_CREDENTIAL
+  UPDATE_CREDENTIAL
+  SHARE_CREATED
+  SHARE_REVOKED
+  VERIFICATION_REVIEW
+  FILE_UPLOADED
+}
+
+enum SubscriptionTier {
+  FREE
+  PRO
+  TEAM
+  ENTERPRISE
+}
+
+model Role {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  users       User[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model SubscriptionPlan {
+  id              String           @id @default(cuid())
+  name            String           @unique
+  tier            SubscriptionTier
+  priceMonthly    Int
+  credentialLimit Int?
+  features        String[]
+  users           User[]
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+}
+
+model User {
+  id                         String          @id @default(cuid())
+  email                      String          @unique
+  passwordHash               String
+  name                       String?
+  role                       Role?           @relation(fields: [roleId], references: [id])
+  roleId                     String?
+  institution                Institution?    @relation(fields: [institutionId], references: [id])
+  institutionId              String?
+  subscriptionPlan           SubscriptionPlan? @relation(fields: [subscriptionPlanId], references: [id])
+  subscriptionPlanId         String?
+  credentials                Credential[]    @relation("CredentialOwner")
+  verificationAssignments    Verification[]  @relation("Reviewer")
+  files                      File[]
+  auditLogs                  AuditLog[]
+  identityDid                String?
+  identityPublicKey          String?
+  identityEncryptedPrivateKey String?
+  accounts                   Account[]
+  sessions                   Session[]
+  createdAt                  DateTime        @default(now())
+  updatedAt                  DateTime        @updatedAt
+}
+
+model Institution {
+  id            String         @id @default(cuid())
+  name          String
+  domain        String?
+  contactEmail  String?
+  users         User[]
+  credentials   Credential[]
+  verifications Verification[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+}
+
+model Credential {
+  id           String             @id @default(cuid())
+  title        String
+  description  String?
+  subject      User               @relation("CredentialOwner", fields: [subjectId], references: [id])
+  subjectId    String
+  issuer       Institution?       @relation(fields: [issuerId], references: [id])
+  issuerId     String?
+  status       CredentialStatus   @default(PENDING)
+  issuedAt     DateTime           @default(now())
+  expiresAt    DateTime?
+  payload      Json
+  hash         String
+  files        File[]
+  verifications Verification[]
+  shares       CredentialShare[]
+  auditLogs    AuditLog[]
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+
+  @@index([subjectId])
+  @@index([issuerId])
+}
+
+model CredentialShare {
+  id           String       @id @default(cuid())
+  credential   Credential   @relation(fields: [credentialId], references: [id])
+  credentialId String
+  token        String       @unique
+  expiresAt    DateTime?
+  revoked      Boolean      @default(false)
+  createdAt    DateTime     @default(now())
+}
+
+model Verification {
+  id             String             @id @default(cuid())
+  credential     Credential         @relation(fields: [credentialId], references: [id])
+  credentialId   String
+  institution    Institution        @relation(fields: [institutionId], references: [id])
+  institutionId  String
+  reviewer       User?              @relation("Reviewer", fields: [reviewerId], references: [id])
+  reviewerId     String?
+  status         VerificationStatus @default(PENDING)
+  note           String?
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+
+  @@index([credentialId])
+  @@index([institutionId])
+}
+
+model File {
+  id            String       @id @default(cuid())
+  key           String
+  url           String
+  type          FileCategory @default(DOCUMENT)
+  size          Int
+  credential    Credential?  @relation(fields: [credentialId], references: [id])
+  credentialId  String?
+  uploadedBy    User?        @relation(fields: [uploadedById], references: [id])
+  uploadedById  String?
+  createdAt     DateTime     @default(now())
+
+  @@index([credentialId])
+  @@index([uploadedById])
+}
+
+model AuditLog {
+  id         String      @id @default(cuid())
+  actor      User?       @relation(fields: [actorId], references: [id])
+  actorId    String?
+  action     AuditAction
+  targetType String
+  targetId   String?
+  meta       Json?
+  createdAt  DateTime    @default(now())
+
+  @@index([actorId])
+  @@index([targetType, targetId])
+}
+
+// NextAuth models
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}

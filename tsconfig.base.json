@@ -1,0 +1,14 @@
+# Base tsconfig for refs
+{
+  "compilerOptions": {
+    "target": "ES2021",
+    "module": "CommonJS",
+    "strict": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": false,
+    "moduleResolution": "Node",
+    "resolveJsonModule": true,
+    "types": []
+  }
+}

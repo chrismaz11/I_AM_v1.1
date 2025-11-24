@@ -1,0 +1,34 @@
+﻿{
+  "mode": "aggressive",
+  "protected": [
+    "core",
+    "design-docs",
+    "system-architecture",
+    "legal",
+    "patents",
+    "brand"
+  ],
+  "evolution": [
+    "src",
+    "app",
+    "api",
+    "prisma",
+    "tests",
+    "agents",
+    "codex",
+    "docs"
+  ],
+  "blockedFiles": [
+    ".env",
+    ".env.local",
+    ".env.production",
+    ".env.development",
+    "package.json",
+    "package-lock.json",
+    "pnpm-lock.yaml",
+    "yarn.lock",
+    "tsconfig.json",
+    "next.config.js",
+    "next.config.mjs"
+  ]
+}

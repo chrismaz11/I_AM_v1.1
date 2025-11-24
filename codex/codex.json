@@ -1,0 +1,19 @@
+﻿{
+  "project": "I AM Platform",
+  "agents": {
+    "architect": "./agents/architect.agent.md",
+    "coder": "./agents/coder.agent.md",
+    "uiux": "./agents/uiux.agent.md",
+    "verification": "./agents/verification.agent.md",
+    "security": "./agents/security.agent.md",
+    "docs": "./agents/docs.agent.md",
+    "devops": "./agents/devops.agent.md",
+    "compliance": "./agents/compliance.agent.md",
+    "grantwriter": "./agents/grantwriter.agent.md"
+  },
+  "settings": {
+    "default_model": "gpt-5.1",
+    "require_checklists": true,
+    "enforce_structure": true
+  }
+}
